@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <style>
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .status-pending {
+            background-color: var(--bs-warning);
+            color: var(--bs-dark);
+        }
+        .status-processing {
+            background-color: var(--bs-primary);
+        }
+        .status-completed {
+            background-color: var(--bs-success);
+        }
+        .status-failed {
+            background-color: var(--bs-danger);
+        }
+        .request-card {
+            transition: transform 0.2s;
+        }
+        .request-card:hover {
+            transform: translateY(-5px);
+        }
+        .subject-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+        .video-detail-list {
+            padding-left: 0;
+            list-style-type: none;
+        }
+        .video-detail-list li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        .video-detail-list i {
+            margin-right: 0.5rem;
+            margin-top: 0.25rem;
+        }
+        .video-detail-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            margin-right: 0.25rem;
+            white-space: nowrap;
+        }
+        .collapse-toggle {
+            cursor: pointer;
+        }
+        .btn-watch-video {
+            transition: all 0.3s ease;
+        }
+        .btn-watch-video:hover {
+            transform: scale(1.05);
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-indicator.pending {
+            background-color: var(--bs-warning);
+        }
+        .status-indicator.processing {
+            background-color: var(--bs-primary);
+            animation: pulse 1.5s infinite;
+        }
+        .status-indicator.completed {
+            background-color: var(--bs-success);
+        }
+        .status-indicator.failed {
+            background-color: var(--bs-danger);
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Video Requests Dashboard</h1>
+        <a href="/" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Request
+        </a>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Total Requests</h6>
+                            <h3 class="mb-0">{{ requests|length }}</h3>
+                        </div>
+                        <i class="fas fa-video fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Completed</h6>
+                            <h3 class="mb-0">{{ requests|selectattr('status', 'equalto', 'completed')|list|length }}</h3>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Pending</h6>
+                            <h3 class="mb-0">{{ requests|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                        </div>
+                        <i class="fas fa-hourglass-half fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Processing</h6>
+                            <h3 class="mb-0">{{ requests|selectattr('status', 'equalto', 'processing')|list|length }}</h3>
+                        </div>
+                        <i class="fas fa-cogs fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/dashboard" method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <label for="phone" class="form-label">Filter by WhatsApp Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+1234567890" value="{{ phone }}">
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Apply Filter
+                    </button>
+                    {% if phone %}
+                        <a href="/dashboard" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if requests %}
+        <div class="row">
+            {% for request in requests %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card request-card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if request.subject == "Visual Arts" %}
+                                    <i class="fas fa-palette subject-icon text-danger"></i>
+                                {% elif request.subject == "Performing Arts" %}
+                                    <i class="fas fa-music subject-icon text-warning"></i>
+                                {% elif request.subject == "Coding" %}
+                                    <i class="fas fa-code subject-icon text-success"></i>
+                                {% elif request.subject == "Financial Literacy" %}
+                                    <i class="fas fa-coins subject-icon text-primary"></i>
+                                {% elif request.subject == "Science" %}
+                                    <i class="fas fa-flask subject-icon text-info"></i>
+                                {% else %}
+                                    <i class="fas fa-book subject-icon text-secondary"></i>
+                                {% endif %}
+                                <span class="fw-bold">{{ request.subject }}</span>
+                            </div>
+                            <span class="badge status-badge status-{{ request.status }}">
+                                <span class="status-indicator {{ request.status }}"></span>
+                                {{ request.status | capitalize }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title d-flex justify-content-between">
+                                <span>{{ request.topic }}</span>
+                                <span class="badge bg-secondary">{{ request.level }}</span>
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="fas fa-clock me-1"></i>Requested: {{ request.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                                {% if request.completed_at %}
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-check-circle me-1"></i>Completed: {{ request.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                                {% endif %}
+                            </div>
+                            
+                            <p class="card-text">{{ request.query[:150] }}{% if request.query|length > 150 %}...{% endif %}</p>
+                            
+                            {% if request.status == "completed" and request.video %}
+                                <hr>
+                                <div class="mb-3">
+                                    <p class="collapse-toggle mb-2" data-bs-toggle="collapse" data-bs-target="#videoDetails{{ request.id }}">
+                                        <i class="fas fa-info-circle me-1 text-primary"></i>
+                                        <strong>Video Details</strong>
+                                        <i class="fas fa-chevron-down float-end small mt-1"></i>
+                                    </p>
+                                    <div class="collapse" id="videoDetails{{ request.id }}">
+                                        <ul class="video-detail-list small">
+                                            <li>
+                                                <i class="fas fa-graduation-cap text-success"></i>
+                                                <span><strong>Learning Level:</strong> {{ request.level }}</span>
+                                            </li>
+                                            <li>
+                                                <i class="fas fa-tag text-info"></i>
+                                                <span><strong>Topics:</strong>
+                                                    <span class="badge bg-info video-detail-badge">{{ request.topic }}</span>
+                                                    <span class="badge bg-secondary video-detail-badge">{{ request.subject }}</span>
+                                                </span>
+                                            </li>
+                                            <li>
+                                                <i class="fas fa-list-check text-warning"></i>
+                                                <span><strong>Contains:</strong>
+                                                    <span class="badge bg-success video-detail-badge">Learning Objectives</span>
+                                                    <span class="badge bg-success video-detail-badge">Key Points</span>
+                                                    <span class="badge bg-success video-detail-badge">Interactive Elements</span>
+                                                </span>
+                                            </li>
+                                            <li>
+                                                <i class="fas fa-clock text-danger"></i>
+                                                <span><strong>Duration:</strong> {{ request.video.duration or '~5' }} minutes</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-flex {% if request.status == 'completed' and request.video %}justify-content-center{% else %}justify-content-between{% endif %} align-items-center mt-3">
+                                {% if request.status == "completed" and request.video %}
+                                    <a href="{{ request.video.firebase_url }}" target="_blank" class="btn btn-success btn-watch-video">
+                                        <i class="fas fa-play me-1"></i>Watch Your Video
+                                    </a>
+                                {% elif request.status == "pending" %}
+                                    <span>
+                                        <i class="fas fa-hourglass-start me-1 text-warning"></i>
+                                        <span class="text-muted">Waiting to be processed</span>
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-warning" disabled>
+                                        <i class="fas fa-clock me-1"></i>Pending
+                                    </button>
+                                {% elif request.status == "processing" %}
+                                    <span>
+                                        <i class="fas fa-spinner fa-spin me-1 text-primary"></i>
+                                        <span class="text-muted">Creating your personalized video</span>
+                                    </span>
+                                    <div class="progress" style="width: 120px; height: 20px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%"></div>
+                                    </div>
+                                {% elif request.status == "failed" %}
+                                    <span>
+                                        <i class="fas fa-exclamation-triangle me-1 text-danger"></i>
+                                        <span class="text-muted">We encountered an issue with your request</span>
+                                    </span>
+                                    <button class="btn btn-sm btn-danger" disabled>
+                                        <i class="fas fa-exclamation-circle me-1"></i>Failed
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            {% if phone %}
+                No video requests found for this WhatsApp number. <a href="/" class="alert-link">Create your first request</a>
+            {% else %}
+                No video requests found. <a href="/" class="alert-link">Create your first request</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Enhanced Info Panel -->
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Our Enhanced Video Generation</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold"><i class="fas fa-lightbulb text-warning me-2"></i>What's Inside Your Videos</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Clear learning objectives</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Detailed key points with explanations</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Engaging visual elements</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Assessment questions to test knowledge</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Hands-on activities to apply learning</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Additional resources for further study</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold"><i class="fas fa-magic text-primary me-2"></i>Special Subject Features</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-palette text-danger me-2"></i><strong>Visual Arts:</strong> Detailed technique demonstrations</li>
+                        <li><i class="fas fa-music text-warning me-2"></i><strong>Performing Arts:</strong> Movement and expression guidance</li>
+                        <li><i class="fas fa-code text-success me-2"></i><strong>Coding:</strong> Code snippets with line-by-line explanations</li>
+                        <li><i class="fas fa-coins text-primary me-2"></i><strong>Financial Literacy:</strong> Real-world scenarios and calculations</li>
+                        <li><i class="fas fa-flask text-info me-2"></i><strong>Science:</strong> Scientific diagrams and experiment walkthroughs</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="alert alert-secondary mt-3">
+                <i class="fas fa-sync-alt me-2"></i>
+                <strong>Auto-refreshing:</strong> This dashboard automatically updates every 30 seconds to show the latest status of your video requests.
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh the page every 30 seconds to update video statuses
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+    
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+    
+    // Add animation to status indicators
+    document.addEventListener('DOMContentLoaded', function() {
+        const processingElements = document.querySelectorAll('.status-indicator.processing');
+        processingElements.forEach(element => {
+            element.style.animation = 'pulse 1.5s infinite';
+        });
+    });
+</script>
+{% endblock %}

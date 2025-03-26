@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .video-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .video-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none"/><path d="M20,50 C20,35 35,20 50,20 C65,20 80,35 80,50 C80,65 65,80 50,80 C35,80 20,65 20,50 Z" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="none"/></svg>');
+        background-size: 100px 100px;
+        opacity: 0.3;
+        z-index: 0;
+    }
+    .video-header-content {
+        position: relative;
+        z-index: 1;
+    }
+    .subject-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 2rem;
+        opacity: 0.7;
+    }
+    .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    .detail-section {
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+    }
+    .info-card {
+        height: 100%;
+        transition: transform 0.3s ease;
+    }
+    .info-card:hover {
+        transform: translateY(-5px);
+    }
+    .learning-objective {
+        padding: 0.5rem 1rem;
+        border-left: 4px solid var(--bs-primary);
+        margin-bottom: 1rem;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 0 0.25rem 0.25rem 0;
+    }
+    .key-point {
+        padding: 0.5rem 1rem;
+        border-left: 4px solid var(--bs-success);
+        margin-bottom: 1rem;
+        background-color: rgba(25, 135, 84, 0.1);
+        border-radius: 0 0.25rem 0.25rem 0;
+    }
+    .assessment-question {
+        padding: 0.5rem 1rem;
+        border-left: 4px solid var(--bs-info);
+        margin-bottom: 1rem;
+        background-color: rgba(13, 202, 240, 0.1);
+        border-radius: 0 0.25rem 0.25rem 0;
+    }
+    .activity {
+        padding: 0.5rem 1rem;
+        border-left: 4px solid var(--bs-warning);
+        margin-bottom: 1rem;
+        background-color: rgba(255, 193, 7, 0.1);
+        border-radius: 0 0.25rem 0.25rem 0;
+    }
+    .resource {
+        padding: 0.5rem 1rem;
+        border-left: 4px solid var(--bs-secondary);
+        margin-bottom: 1rem;
+        background-color: rgba(108, 117, 125, 0.1);
+        border-radius: 0 0.25rem 0.25rem 0;
+    }
+    .play-button {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2rem auto;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .play-button:hover {
+        background: var(--bs-primary);
+        transform: scale(1.1);
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 20px;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 9px;
+        height: 100%;
+        width: 2px;
+        background-color: var(--bs-gray-400);
+    }
+    .timeline-item:last-child::before {
+        height: 50%;
+    }
+    .timeline-marker {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--bs-primary);
+        z-index: 1;
+    }
+    .timeline-marker.completed {
+        background-color: var(--bs-success);
+    }
+    .timeline-marker.processing {
+        background-color: var(--bs-primary);
+        animation: pulse 1.5s infinite;
+    }
+    .timeline-marker.pending {
+        background-color: var(--bs-warning);
+    }
+    .timeline-marker.failed {
+        background-color: var(--bs-danger);
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Back button -->
+    <div class="mb-4">
+        <a href="{{ url_for('web.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+    
+    <!-- Video Header -->
+    <div class="video-header text-white mb-4">
+        <div class="video-header-content">
+            <div class="subject-badge">
+                {% if request.subject == "Visual Arts" %}
+                    <i class="fas fa-palette text-white"></i>
+                {% elif request.subject == "Performing Arts" %}
+                    <i class="fas fa-music text-white"></i>
+                {% elif request.subject == "Coding" %}
+                    <i class="fas fa-code text-white"></i>
+                {% elif request.subject == "Financial Literacy" %}
+                    <i class="fas fa-coins text-white"></i>
+                {% elif request.subject == "Science" %}
+                    <i class="fas fa-flask text-white"></i>
+                {% else %}
+                    <i class="fas fa-book text-white"></i>
+                {% endif %}
+            </div>
+            
+            <span class="badge bg-secondary mb-2">{{ request.subject }}</span>
+            <h1 class="display-5 fw-bold mb-2">{{ request.topic }}</h1>
+            <div class="d-flex align-items-center mb-3">
+                <span class="badge bg-primary me-2">{{ request.level }}</span>
+                <span class="badge {% if request.is_enhanced() %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                    {% if request.is_enhanced() %}Enhanced{% else %}Standard{% endif %} Content
+                </span>
+                <span class="badge bg-info">
+                    <i class="fas {% if request.get_message_type() == 'sms' %}fa-sms{% else %}fa-whatsapp{% endif %} me-1"></i>
+                    {{ request.get_message_type()|capitalize }}
+                </span>
+            </div>
+            <p class="lead mb-0">{{ request.query }}</p>
+        </div>
+    </div>
+    
+    <!-- Video Status and Timeline -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Request Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="me-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center 
+                                        {% if request.status == 'completed' %}bg-success{% elif request.status == 'processing' %}bg-primary{% elif request.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %} 
+                                        text-white" style="width: 60px; height: 60px;">
+                                {% if request.status == 'completed' %}
+                                    <i class="fas fa-check fa-2x"></i>
+                                {% elif request.status == 'processing' %}
+                                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                {% elif request.status == 'pending' %}
+                                    <i class="fas fa-hourglass-half fa-2x"></i>
+                                {% else %}
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-1">{{ request.status|capitalize }}</h3>
+                            {% if request.status == 'completed' %}
+                                <p class="mb-0 text-success">Your video is ready!</p>
+                            {% elif request.status == 'processing' %}
+                                <p class="mb-0 text-primary">We're creating your video right now</p>
+                            {% elif request.status == 'pending' %}
+                                <p class="mb-0 text-warning">Your request is in the queue</p>
+                            {% else %}
+                                <p class="mb-0 text-danger">We encountered an issue with your video</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker completed"></div>
+                            <div class="ms-3">
+                                <h6>Request Received</h6>
+                                <p class="text-muted small mb-0">{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if request.status == 'pending' %}pending{% else %}completed{% endif %}"></div>
+                            <div class="ms-3">
+                                <h6>Content Generation</h6>
+                                <p class="text-muted small mb-0">
+                                    {% if request.status == 'pending' %}
+                                        Waiting to start
+                                    {% else %}
+                                        Personalized content created
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if request.status == 'pending' %}pending{% elif request.status == 'processing' %}processing{% else %}completed{% endif %}"></div>
+                            <div class="ms-3">
+                                <h6>Video Generation</h6>
+                                <p class="text-muted small mb-0">
+                                    {% if request.status == 'pending' %}
+                                        Waiting to start
+                                    {% elif request.status == 'processing' %}
+                                        Creating your video
+                                    {% else %}
+                                        Video successfully created
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if request.status != 'completed' %}pending{% else %}completed{% endif %}"></div>
+                            <div class="ms-3">
+                                <h6>Delivery</h6>
+                                <p class="text-muted small mb-0">
+                                    {% if request.status != 'completed' %}
+                                        Waiting for video to be ready
+                                    {% else %}
+                                        Video delivered via {{ request.get_message_type()|capitalize }}
+                                        {% if request.completed_at %}
+                                            on {{ request.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% endif %}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-video me-2"></i>Video Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if request.status == 'completed' and request.video %}
+                        <h5 class="mb-3">{{ request.video.title }}</h5>
+                        
+                        {% if request.video.description %}
+                            <p class="mb-3">{{ request.video.description }}</p>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Duration</small>
+                                        <p class="mb-0">{{ request.video.duration or '~5' }} minutes</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-calendar-alt text-success me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Created On</small>
+                                        <p class="mb-0">{{ request.video.created_at.strftime('%Y-%m-%d') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap mb-3">
+                            <span class="badge bg-success me-1 mb-1">Learning Objectives</span>
+                            <span class="badge bg-success me-1 mb-1">Key Points</span>
+                            <span class="badge bg-success me-1 mb-1">Assessment Questions</span>
+                            <span class="badge bg-success me-1 mb-1">Activities</span>
+                            {% if request.is_enhanced() %}
+                                <span class="badge bg-success me-1 mb-1">Interactive Elements</span>
+                                <span class="badge bg-success me-1 mb-1">Additional Resources</span>
+                            {% endif %}
+                        </div>
+                        
+                        <a href="{{ request.video.firebase_url }}" target="_blank" class="btn btn-primary w-100">
+                            <i class="fas fa-play me-2"></i>Watch Video
+                        </a>
+                        
+                        {% if request.get_message_type() == 'whatsapp' %}
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fab fa-whatsapp me-2"></i>
+                                This video was delivered to your WhatsApp ({{ request.user.phone_number }})
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-sms me-2"></i>
+                                This video was delivered to your SMS ({{ request.user.phone_number }})
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center">
+                            {% if request.status == 'processing' %}
+                                <i class="fas fa-spinner fa-spin feature-icon text-primary"></i>
+                                <h5>Your video is being generated</h5>
+                                <p class="text-muted">This may take a few minutes. Please check back later.</p>
+                                <div class="progress mt-3">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%"></div>
+                                </div>
+                            {% elif request.status == 'pending' %}
+                                <i class="fas fa-hourglass-half feature-icon text-warning"></i>
+                                <h5>Your request is pending</h5>
+                                <p class="text-muted">Your request is in the queue and will be processed soon.</p>
+                            {% else %}
+                                <i class="fas fa-exclamation-circle feature-icon text-danger"></i>
+                                <h5>Error Processing Video</h5>
+                                <p class="text-muted">We encountered an issue while generating your video. Please try submitting a new request.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if request.status == 'completed' and request.video %}
+    <!-- Video Content Preview -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Content Preview</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <!-- Learning Objectives -->
+                <div class="col-md-6">
+                    <h5><i class="fas fa-bullseye text-primary me-2"></i>Learning Objectives</h5>
+                    <div class="learning-objective">
+                        <p class="mb-0">Understand the core concepts of {{ request.topic }}</p>
+                    </div>
+                    <div class="learning-objective">
+                        <p class="mb-0">Apply {{ request.subject }} principles to solve real-world problems</p>
+                    </div>
+                    <div class="learning-objective">
+                        <p class="mb-0">Develop skills in {{ request.topic }} at {{ request.level }} level</p>
+                    </div>
+                </div>
+                
+                <!-- Key Points -->
+                <div class="col-md-6">
+                    <h5><i class="fas fa-key text-success me-2"></i>Key Points</h5>
+                    <div class="key-point">
+                        <p class="mb-0">The fundamental principles of {{ request.topic }}</p>
+                    </div>
+                    <div class="key-point">
+                        <p class="mb-0">How {{ request.topic }} relates to other areas in {{ request.subject }}</p>
+                    </div>
+                    <div class="key-point">
+                        <p class="mb-0">Practical applications and examples in real contexts</p>
+                    </div>
+                </div>
+                
+                <!-- Assessment Questions -->
+                <div class="col-md-6">
+                    <h5><i class="fas fa-question-circle text-info me-2"></i>Assessment Questions</h5>
+                    <div class="assessment-question">
+                        <p class="mb-1"><strong>Question:</strong> What are the primary elements of {{ request.topic }}?</p>
+                        <p class="mb-0 text-muted"><strong>Answer:</strong> <em>Available in the video</em></p>
+                    </div>
+                    <div class="assessment-question">
+                        <p class="mb-1"><strong>Question:</strong> How can you apply {{ request.topic }} in a real-world scenario?</p>
+                        <p class="mb-0 text-muted"><strong>Answer:</strong> <em>Available in the video</em></p>
+                    </div>
+                </div>
+                
+                <!-- Activities -->
+                <div class="col-md-6">
+                    <h5><i class="fas fa-hands text-warning me-2"></i>Hands-On Activities</h5>
+                    <div class="activity">
+                        <p class="mb-1"><strong>Activity 1:</strong> Practice exercise for {{ request.topic }}</p>
+                        <p class="mb-0 text-muted"><small>Difficulty: {{ request.level }}</small></p>
+                    </div>
+                    <div class="activity">
+                        <p class="mb-1"><strong>Activity 2:</strong> Interactive project applying {{ request.topic }} concepts</p>
+                        <p class="mb-0 text-muted"><small>Estimated time: 20-30 minutes</small></p>
+                    </div>
+                </div>
+                
+                <!-- Resources -->
+                <div class="col-12">
+                    <h5><i class="fas fa-book text-secondary me-2"></i>Additional Resources</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="resource">
+                                <p class="mb-1"><strong>Resource 1:</strong> Further reading on {{ request.topic }}</p>
+                                <p class="mb-0 text-muted"><small>Type: Article</small></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="resource">
+                                <p class="mb-1"><strong>Resource 2:</strong> Practice exercises for {{ request.level }} students</p>
+                                <p class="mb-0 text-muted"><small>Type: Worksheet</small></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="resource">
+                                <p class="mb-1"><strong>Resource 3:</strong> Advanced concepts in {{ request.topic }}</p>
+                                <p class="mb-0 text-muted"><small>Type: Video Tutorial</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Request Another Video -->
+    <div class="card bg-primary text-white mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h4 class="mb-2">Want to learn about another topic?</h4>
+                    <p class="mb-0">Create a new video request on any subject or topic of your choice.</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <a href="{{ url_for('web.index') }}#request-form" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>Create New Video Request
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
