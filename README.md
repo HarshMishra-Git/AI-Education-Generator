@@ -33,7 +33,7 @@ To use the AI-Education-Generator, follow these instructions:
 
 1. **Run the application:**
    ```bash
-   python app.py
+   python main.py
    ```
 
 2. **Access the web interface:**
